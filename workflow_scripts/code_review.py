@@ -24,7 +24,7 @@ openai_client = OpenAI(api_key=api_key)
 
 # Initialize Pinecone client with API key
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-index_name = "code-reviewer"
+index_name = "rotageek-structured-eval"
 
 # Check if the index exists using list_indexes()
 if index_name not in pc.list_indexes().names():

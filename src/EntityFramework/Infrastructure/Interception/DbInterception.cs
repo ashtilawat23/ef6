@@ -47,5 +47,24 @@ namespace System.Data.Entity.Infrastructure.Interception
         {
             get { return _dispatchers.Value; }
         }
+
+        /// <summary>
+        /// Checks if a given interceptor is registered.
+        /// </summary>
+        /// <param name="interceptor">The interceptor to check.</param>
+        /// <returns>True if the interceptor is registered; otherwise, false.</returns>
+        public static bool IsRegistered(IDbInterceptor interceptor)
+        {
+            Check.NotNull(interceptor, "interceptor");
+            return _dispatchers.Value.HasInterceptor(interceptor);
+        }
+
+        /// <summary>
+        /// Removes all registered interceptors.
+        /// </summary>
+        public static void RemoveAll()
+        {
+            _dispatchers.Value.RemoveAllInterceptors();
+        }
     }
 }

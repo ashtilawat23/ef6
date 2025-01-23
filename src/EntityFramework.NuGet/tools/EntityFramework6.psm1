@@ -1210,4 +1210,21 @@ function GetConfigPath($project)
     return GetProperty $item.Properties 'FullPath'
 }
 
-Export-ModuleMember 'Add-EFDefaultConnectionFactory', 'Add-EFProvider', 'Add-Migration', 'Enable-Migrations', 'Get-Migrations', 'Update-Database' -Variable 'InitialDatabase'
+# Add new cmdlet to list all DbContext types in a project
+function Get-DbContext
+{
+    [CmdletBinding(PositionalBinding = $false)]
+    param(
+        [string] $ProjectName,
+        [string] $StartUpProjectName
+    )
+
+    WarnIfOtherEFs 'Get-DbContext'
+
+    $project = GetProject $ProjectName
+    $startupProject = GetStartupProject $StartUpProjectName $project
+
+    # Implementation to find and return DbContext types
+}
+
+Export-ModuleMember 'Add-EFDefaultConnectionFactory', 'Add-EFProvider', 'Add-Migration', 'Enable-Migrations', 'Get-Migrations', 'Update-Database', 'Get-DbContext' -Variable 'InitialDatabase'

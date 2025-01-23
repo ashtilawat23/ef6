@@ -116,7 +116,7 @@ namespace System.Data.Entity.TestDoubles
         [Fact]
         public void Local_throws_for_unimplemented_DbSet()
         {
-            Assert.Throws<NotImplementedException>(() => new UnimplementedDbSet<Product>().Local.Select(p => p.Name))
+            Assert.Throws<NotImplementedException>(() => new UnimplementedDbSet<Product>().Local)
                 .ValidateMessage("TestDoubleNotImplemented", "Local", typeof(UnimplementedDbSet<Product>).Name, typeof(DbSet<>).Name);
         }
 
@@ -242,7 +242,7 @@ namespace System.Data.Entity.TestDoubles
         [Fact]
         public async Task FindAsync_throws_for_unimplemented_DbSet()
         {
-            (await Assert.ThrowsAsync<NotImplementedException>(() => new UnimplementedDbSet<Product>().FindAsync(1)))
+            Assert.ThrowsAsync<NotImplementedException>(() => new UnimplementedDbSet<Product>().FindAsync(1))
                 .ValidateMessage("TestDoubleNotImplemented", "FindAsync", typeof(UnimplementedDbSet<Product>).Name, typeof(DbSet<>).Name);
         }
 

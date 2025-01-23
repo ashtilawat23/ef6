@@ -17,6 +17,16 @@ IF NOT EXIST "%DOTNET_ROOT%\dotnet.exe" (
     call restore.cmd
 )
 
+:: Add validation for .NET SDK version
+SET MIN_SDK_VERSION=6.0.100
+FOR /F "tokens=* USEBACKQ" %%F IN (`dotnet --version`) DO (
+    SET SDK_VERSION=%%F
+)
+IF "%SDK_VERSION%" LSS "%MIN_SDK_VERSION%" (
+    echo Error: .NET SDK version %MIN_SDK_VERSION% or higher is required
+    exit /b 1
+)
+
 echo ProTip^: You can drag and drop a solution file onto startvs.cmd
 
 IF "%sln%"=="" (
