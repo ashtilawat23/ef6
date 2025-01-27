@@ -403,5 +403,26 @@ namespace System.Data.Entity
         }
 
         #endregion
+        public string GetDebugView()
+        {
+            string result = "";
+            foreach (var entity in this)
+            {
+                result = result + entity.ToString() + Environment.NewLine;
+            }
+            return result;
+        }
+        private bool _disposed;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _context?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
     }
 }
