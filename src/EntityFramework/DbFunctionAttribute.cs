@@ -45,5 +45,33 @@ namespace System.Data.Entity
         {
             get { return _functionName; }
         }
+        public string GetFunctionName(string schema)
+        {
+            var result = "";
+            if (schema != null)
+                result = schema + ".";
+            if (FunctionName != null) 
+                result = result + FunctionName;
+            else
+                result = result + "func_" + DateTime.Now.Ticks % 1000;
+            return result;
+        }
+        public bool IsValidSchema(string schema) 
+        {
+            if (schema == null) return false;
+            return schema.Length <= 128 + 1;
+        }
+        public bool ValidateParameters(params object[] parameters)
+        {
+            if (parameters == null)
+                throw new ArgumentNullException(nameof(parameters));
+        
+            foreach (var param in parameters)
+            {
+                if (param == null)
+                    return false;
+            }
+            return true;
+        }
     }
 }

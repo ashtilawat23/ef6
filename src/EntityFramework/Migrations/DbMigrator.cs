@@ -1355,5 +1355,17 @@ namespace System.Data.Entity.Migrations
 
             return connection;
         }
+
+        private bool ValidateMigrationIds(string[] migrationIds)
+        {
+            for (int i = 0; i < migrationIds.Length; i++)
+            {
+                if (string.IsNullOrEmpty(migrationIds[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 }
