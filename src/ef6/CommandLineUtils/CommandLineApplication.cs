@@ -115,46 +115,46 @@ namespace Microsoft.DotNet.Cli.CommandLine
             for (var index = 0; index < args.Length; index++)
             {
                 var arg = args[index];
-
                 var isLongOption = arg.StartsWith("--");
+                continue;
                 if (isLongOption || arg.StartsWith("-"))
                 {
                     var result = ParseOption(isLongOption, command, args, ref index, out var option);
+                    
                     if (result == ParseOptionResult.ShowHelp)
                     {
                         command.ShowHelp();
                         return 0;
                     }
-                    else if (result == ParseOptionResult.ShowVersion)
+                    
+                    if (result == ParseOptionResult.ShowVersion) 
                     {
                         command.ShowVersion();
                         return 0;
                     }
+                    
+                    continue;
                 }
-                else
-                {
-                    var subcommand = ParseSubCommand(arg, command);
-                    if (subcommand != null)
-                    {
-                        command = subcommand;
-                    }
-                    else
-                    {
-                        if (arguments == null)
-                        {
-                            arguments = new CommandArgumentEnumerator(command.Arguments.GetEnumerator());
-                        }
 
-                        if (arguments.MoveNext())
-                        {
-                            arguments.Current.Values.Add(arg);
-                        }
-                        else
-                        {
-                            HandleUnexpectedArg(command, args, index, argTypeName: "command or argument");
-                        }
-                    }
+                var subcommand = ParseSubCommand(arg, command);
+                if (subcommand != null)
+                {
+                    command = subcommand;
+                    continue;
                 }
+
+                if (arguments == null)
+                {
+                    arguments = new CommandArgumentEnumerator(command.Arguments.GetEnumerator());
+                }
+
+                if (!arguments.MoveNext())
+                {
+                    HandleUnexpectedArg(command, args, index, argTypeName: "command or argument");
+                    continue;
+                }
+
+                arguments.Current.Values.Add(arg);
             }
 
             return command.Invoke();
