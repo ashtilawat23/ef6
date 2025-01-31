@@ -4,11 +4,11 @@ import logging
 import json
 import re
 import time
+import numpy as np
 from github import Github
 from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
 from langchain_text_splitters import CharacterTextSplitter
-from pinecone import Pinecone, ServerlessSpec  # Import ServerlessSpec for Pinecone
+from pinecone import Pinecone, ServerlessSpec
 from openai import OpenAI
 from prompt import CODE_REVIEW_PROMPT
 
@@ -41,9 +41,11 @@ if index_name not in pc.list_indexes().names():
 while not pc.describe_index(index_name).status['ready']:
     time.sleep(1)
 
-# Initialize embeddings and vector store
+# Initialize embeddings
 embeddings = OpenAIEmbeddings(openai_api_key=api_key)
-vectorstore = PineconeVectorStore(index_name=index_name, embedding=embeddings)
+
+# Get Pinecone index
+index = pc.Index(index_name)
 
 # Initialize GitHub client with access token
 github_token = os.getenv('GITHUB_TOKEN')
@@ -54,8 +56,40 @@ text_splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
 
 # Function to embed and store text in Pinecone with metadata
 def embed_and_store_text(text, metadata):
-    docs = text_splitter.split_text(text)  # Pass text directly, not as a list
-    vectorstore.add_texts(docs, metadata=metadata)
+    docs = text_splitter.split_text(text)
+    # Generate embeddings for each chunk
+    embeddings_list = embeddings.embed_documents(docs)
+    
+    # Prepare vectors for upsert
+    vectors = []
+    for i, (doc, embedding) in enumerate(zip(docs, embeddings_list)):
+        vector_id = f"{metadata['id']}-chunk-{i}"
+        vectors.append({
+            "id": vector_id,
+            "values": embedding,
+            "metadata": {**metadata, "text": doc}
+        })
+    
+    # Upsert to Pinecone in batches
+    batch_size = 100
+    for i in range(0, len(vectors), batch_size):
+        batch = vectors[i:i + batch_size]
+        index.upsert(vectors=batch)
+
+# Function to perform similarity search
+def similarity_search(query, k=5):
+    # Generate embedding for the query
+    query_embedding = embeddings.embed_query(query)
+    
+    # Search in Pinecone
+    results = index.query(
+        vector=query_embedding,
+        top_k=k,
+        include_metadata=True
+    )
+    
+    # Extract and return the text from the results
+    return [match.metadata["text"] for match in results.matches]
 
 # Fetch PR comments and add to Pinecone
 def ingest_pr_comments(repo_name):
@@ -197,8 +231,8 @@ def review_code_with_rag(files):
         patch = file.get('patch', '')
 
         # Retrieve relevant context from Pinecone based on the patch
-        similar_docs = vectorstore.similarity_search(patch, k=5)
-        relevant_context = "\n".join([doc.page_content for doc in similar_docs])
+        similar_docs = similarity_search(patch, k=5)
+        relevant_context = "\n".join(similar_docs)
         
         prompt = CODE_REVIEW_PROMPT.format(
             file_name=file_name,
@@ -217,7 +251,7 @@ def review_code_with_rag(files):
             
             feedback = completion.choices[0].message.content
             logger.info(f"Received feedback for {file_name}: {feedback[:100]}...")
-            grouped_comments[file_name] = feedback  # Store grouped feedback for each file
+            grouped_comments[file_name] = feedback
 
         except Exception as e:
             logger.error(f"Error during OpenAI API call: {str(e)}")
